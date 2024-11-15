@@ -38,16 +38,6 @@ typedef enum {
 #include <hal/pulp.h>
 #include <hal/pulp_io.h>
 
-#ifdef ARCHI_HMR
-// void __attribute__((naked)) pos_hmr_store_part_to_stack();
-// void __attribute((naked)) pos_hmr_store_rest_to_stack();
-// void __attribute((naked)) pos_hmr_load_part_from_stack();
-// void pos_hmr_store_state_to_stack();
-// void __attribute__((naked)) pos_hmr_load_state_from_stack();
-void __attribute__((naked)) pos_hmr_sw_reload();
-void __attribute__((naked)) pos_hmr_tmr_irq();
-#endif
-
 #ifdef ARCHI_HAS_CLUSTER
 
 void cluster_start(int cid, int (*entry)());
