@@ -1,42 +1,55 @@
 OUTPUT_ARCH(riscv)
 ENTRY( _start )
+
+/* Instruction Memory (IMEM) starts at BASE_ADDR + ADDR_RANGE - IMEM_SIZE
+   and is allowed to overflow into L2. */
+
 MEMORY
 {
-  LOCAL        : ORIGIN = 0x00000004, LENGTH = 0x0001fffc
-  L2           : ORIGIN = 0x10000004, LENGTH = 0x00fffffc
+  L1       (rw)  : ORIGIN = 0x04000000, LENGTH = 0x4000
+  DMEM     (rw)  : ORIGIN = 0x0C000000, LENGTH = 0x4000
+  IMEM     (rwx) : ORIGIN = 0x0FFFC000, LENGTH = 0x1004000
+  L2       (rwx) : ORIGIN = 0x10000000, LENGTH = 0x1000000
 }
-
-/*
- * This linker script try to put core data in LOCAL private bank0 and core code
- * in LOCAL private bank1 to avoid contention between core code and data
- * as the core has no instruction cache and is so often accessing LOCAL to
- * get instructions. Everything can be shifted in case one bank is full.
- *
- * Cluster code and initialized data are put in L2 to not polute
- * private banks which are quite small, and also avoid contentions between
- * cluster cache refill and FC.
- */
 
 SECTIONS
 {
-  /*
-   * LOCAL PRIVATE BANK0
-   *
-   * Contains FC data
-   */
+
+  __stack_size = DEFINED(__stack_size) ? __stack_size : 0x800;
+
+  .bss (NOLOAD) : {
+    . = ALIGN(8);
+    _bss_start = .;
+    *(.bss)
+    *(.bss.*)
+    *(.sbss)
+    *(.sbss.*)
+    *(.shbss)
+    *(.shbss.*)
+    *(COMMON)
+    . = ALIGN(4);
+    _bss_end = .;
+  } > L1
+
+  .vectors :
+  {
+    . = ALIGN(256);
+    __irq_vector_base = .;
+    KEEP(*(.vectors))
+  } > IMEM
 
   .init :
   {
     . = ALIGN(4);
     KEEP( *(.init) )
-  } > LOCAL
+  } > IMEM
 
 
   .fini :
   {
     . = ALIGN(4);
     KEEP( *(.fini) )
-  } > LOCAL
+  } > IMEM
 
 
   .preinit_array : {
@@ -44,7 +57,7 @@ SECTIONS
     PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array))
     PROVIDE_HIDDEN (__preinit_array_end = .);
-  } > LOCAL
+  } > IMEM
 
 
   .init_array : {
@@ -59,7 +72,7 @@ SECTIONS
     LONG(0)
     __CTOR_END__ = .;
     PROVIDE_HIDDEN (__init_array_end = .);
-  } > LOCAL
+  } > IMEM
 
 
   .fini_array : {
@@ -74,14 +87,26 @@ SECTIONS
     KEEP (*(SORT(.fini_array.*)))
     KEEP (*(.fini_array ))
     PROVIDE_HIDDEN (__fini_array_end = .);
-  } > LOCAL
-
+  } > IMEM
 
   .boot : {
     . = ALIGN(4);
     *(.boot)
     *(.boot.data)
-  } > LOCAL
+  } > IMEM
+
+  .text :
+  {
+    . = ALIGN(4);
+    _stext = .;
+    *(.text)
+    *(.text.*)
+    _etext  =  .;
+    *(.lit)
+    *(.shdata)
+    _endtext = .;
+    . = ALIGN(4);
+  } > IMEM
 
 
   .rodata : {
@@ -91,45 +116,28 @@ SECTIONS
     *(.srodata);
     *(.srodata.*)
     *(.eh_frame*)
-  } > LOCAL
+  } > IMEM
 
 
   .got : {
     . = ALIGN(4);
     *(.got.plt) * (.igot.plt) *(.got) *(.igot)
-  } > LOCAL
-
-
-  .shbss : {
-    . = ALIGN(4);
-    *(.shbss)
-  } > LOCAL
-
+  } > IMEM
 
   .talias : {
-  } > LOCAL
-
+  } > L1
 
   .gnu.offload_funcs : {
     . = ALIGN(4);
     KEEP(*(.gnu.offload_funcs))
-  } > LOCAL
-
+  } > IMEM
 
   .gnu.offload_vars : {
     . = ALIGN(4);
     KEEP(*(.gnu.offload_vars))
-  } > LOCAL
+  } > IMEM
 
-
-  .stack : {
-    . = ALIGN(4);
-    . = ALIGN(16);
-    stack_start = .;
-    . = . + 0x800;
-    stack = .;
-  } > LOCAL
-
+  _sidata = LOADADDR(.data);
 
   .data : {
     . = ALIGN(4);
@@ -149,61 +157,29 @@ SECTIONS
     . = ALIGN(4);
     edata  =  .;
     _edata  =  .;
-  } > LOCAL
+  } > L1 AT > IMEM
 
+  /* Stack goes into the L1 last */
 
-  .bss : {
-    . = ALIGN(8);
-    _bss_start = .;
-    *(.bss)
-    *(.bss.*)
-    *(.sbss)
-    *(.sbss.*)
-    *(COMMON)
-    . = ALIGN(4);
-    _bss_end = .;
-  } > LOCAL
+  .stack (NOLOAD) : {
+    . = ORIGIN(L1) + LENGTH(L1) - __stack_size;
+    stack_start = .;
+    . += __stack_size;
+    stack = .;
+  } > L1
 
+  /*
+   * L2 SHARED MEMORY
+   */
+
+  /* Place the location counter . to the last item put into L1 */
+  .imem_end : { . = ALIGN(4); } > IMEM
 
   __l2_priv0_end = ALIGN(4);
-
-
-
-
-  /*
-   * LOCAL PRIVATE BANK1
-   *
-   * Contains FC code
-   */
-
-  .vectors MAX(0x00010000,ALIGN(256)) :
-  {
-    __irq_vector_base = .;
-    KEEP(*(.vectors))
-  } > LOCAL
-
-  .text :
-  {
-    . = ALIGN(4);
-    _stext = .;
-    *(.text)
-    *(.text.*)
-    _etext  =  .;
-    *(.lit)
-    *(.shdata)
-    _endtext = .;
-    . = ALIGN(4);
-  } > LOCAL
-
   __l2_priv1_end = ALIGN(4);
 
-  /*
-   * L2 SHARED BANKS
-   *
-   * Contains other data such as peripheral data and cluster code and data
-   */
-
-  .l2_data MAX(0x1c010000,ALIGN(4)) :
+  /* As IMem is allowed to overflow into L2, start L2 at the location counter */
+  .l2_data MAX(ORIGIN(L2), .) :
   {
     . = ALIGN(4);
     *(.l2_data)

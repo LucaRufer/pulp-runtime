@@ -17,6 +17,16 @@
 #include "pulp.h"
 #include "chips/safety-island/soc.h"
 
+void __attribute__((constructor)) __copy_data (void) {
+  extern char _sidata, _sdata, _edata;
+  size_t *src = (size_t *) &_sidata;
+  size_t *dst = (size_t *) &_sdata;
+  size_t *end = (size_t *) &_edata;
+  while (dst < end) {
+    *dst++ = *src++;
+  }
+}
+
 void pos_soc_init()
 {
 #if __PLATFORM__ != ARCHI_PLATFORM_FPGA
