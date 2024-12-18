@@ -11,7 +11,7 @@ ENTRY( _start )
 
 MEMORY
 {
-  L1       (rw)  : ORIGIN = 0x04000000, LENGTH = 0x4000
+  L1       (rw)  : ORIGIN = 0x04000000, LENGTH = 0x20000
   DMEM     (rw)  : ORIGIN = 0x0C000000, LENGTH = 0x4000
   IMEM     (rwx) : ORIGIN = 0x0FFFC000, LENGTH = 0x1004000
   L2       (rwx) : ORIGIN = 0x10000000, LENGTH = 0x1000000
