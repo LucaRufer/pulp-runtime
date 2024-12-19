@@ -13,11 +13,11 @@
 #define APB_SOC_STATUS_EOC_BIT  31
 
 static inline void apb_soc_bootaddr_set(unsigned int value) {
-  pulp_write32(ARCHI_SOC_CTRL_ADDR + SOC_CTRL_BOOTADDR_REG_OFFSET, value);
+  pulp_write32(ARCHI_AON_SOC_CTRL_ADDR + AON_SOC_CTRL_BOOTADDR_REG_OFFSET, value);
 }
 
 static inline unsigned int apb_soc_bootaddr_get(void) {
-  return pulp_read32(ARCHI_SOC_CTRL_ADDR + SOC_CTRL_BOOTADDR_REG_OFFSET);
+  return pulp_read32(ARCHI_AON_SOC_CTRL_ADDR + AON_SOC_CTRL_BOOTADDR_REG_OFFSET);
 }
 
 static inline void apb_soc_status_set(unsigned int value) {
