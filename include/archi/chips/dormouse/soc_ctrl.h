@@ -12,12 +12,8 @@ extern "C" {
 // Register width
 #define SOC_CTRL_PARAM_REG_WIDTH 32
 
-// Core Fetch Enable
-#define SOC_CTRL_FETCHEN_REG_OFFSET 0x0
-#define SOC_CTRL_FETCHEN_FETCHEN_BIT 0
-
 // Core Return Status (return value, EOC)
-#define SOC_CTRL_CORESTATUS_REG_OFFSET 0x4
+#define SOC_CTRL_CORESTATUS_REG_OFFSET 0x0
 
 #ifdef __cplusplus
 }  // extern "C"
