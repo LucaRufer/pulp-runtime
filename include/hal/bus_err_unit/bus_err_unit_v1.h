@@ -19,17 +19,17 @@
 
 #include "archi/pulp.h"
 
-static inline unsigned int data_bus_err_get_addr_32() {
-  return pulp_read32(ARCHI_DATA_ERR_ADDR+BUS_ERR_UNIT_ERR_ADDR_REG_OFFSET);
+static inline unsigned int data_bus_err_get_addr_32(unsigned int core) {
+  return pulp_read32(ARCHI_DATA_ERR_ADDR(core)+BUS_ERR_UNIT_ERR_ADDR_REG_OFFSET);
 }
 
-static inline uint64_t data_bus_err_get_addr_64() {
-  uint64_t tmp = pulp_read32(ARCHI_DATA_ERR_ADDR+BUS_ERR_UNIT_ERR_ADDR_TOP_REG_OFFSET);
-  return (tmp << 32) | (uint64_t)(pulp_read32(ARCHI_DATA_ERR_ADDR+BUS_ERR_UNIT_ERR_ADDR_REG_OFFSET));
+static inline uint64_t data_bus_err_get_addr_64(unsigned int core) {
+  uint64_t tmp = pulp_read32(ARCHI_DATA_ERR_ADDR(core)+BUS_ERR_UNIT_ERR_ADDR_TOP_REG_OFFSET);
+  return (tmp << 32) | (uint64_t)(pulp_read32(ARCHI_DATA_ERR_ADDR(core)+BUS_ERR_UNIT_ERR_ADDR_REG_OFFSET));
 }
 
-static inline unsigned int data_bus_err_get_err_and_pop() {
-  return pulp_read32(ARCHI_DATA_ERR_ADDR+BUS_ERR_UNIT_ERR_CODE_REG_OFFSET);
+static inline unsigned int data_bus_err_get_err_and_pop(unsigned int core) {
+  return pulp_read32(ARCHI_DATA_ERR_ADDR(core)+BUS_ERR_UNIT_ERR_CODE_REG_OFFSET);
 }
 
 #endif // __HAL_BUS_ERR_UNIT_V1_H__
